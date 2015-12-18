@@ -1,25 +1,83 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
----
+Reproducible Research Project 1
+================================
 
 
-## Loading and preprocessing the data
+###1.Loading and processing the data
+Code:
+```{r}
+activity <- read.csv("C:/Users/Edward Wang/Desktop/activity.csv")
+```
 
 
+###2. What is mean total number of steps taken per day?
+Code:
+```{r meansteps}
+data1 <- aggregate(activity$steps, by=list(activity$date), FUN=sum, na.rm = T)
+names(data1) <- c("date", "steps.sum")
 
-## What is mean total number of steps taken per day?
+library(ggplot2)
+qplot(steps.sum, data = data1)
+
+mean(data1$steps.sum)
+median(data1$steps.sum)
+```
 
 
+###3. What is the average daily activity pattern?
+Code:
+```{r}
+data2 <- aggregate(activity$steps, by=list(activity$interval), FUN=mean, na.rm = T)
+names(data2) <- c("interval", "steps.mean")
+qplot(interval, steps.mean, data = data2, geom = "line")
 
-## What is the average daily activity pattern?
+data3 <- aggregate(activity$steps, by=list(activity$interval), FUN=sum, na.rm = T)
+names(data3) <- c("interval", "steps.sum")
+data3[data3$steps.sum == max(data3$steps.sum),]
+```
 
 
+###4. Imputing missing values
+Code:
+```{r}
+table(is.na(activity$steps))
 
-## Imputing missing values
+datawithoutna <- read.csv("C:/Users/Edward Wang/Desktop/activity.csv")
+for (i in 1:length(datawithoutna$steps)) {
+    if (is.na(datawithoutna$steps[i]) == T) {
+      datawithoutna$steps[i] <- data2$steps.mean[data2$interval == datawithoutna$interval[i]]
+    } 
+  }
+
+data4 <- aggregate(datawithoutna$steps, by=list(datawithoutna$date), FUN=sum)
+names(data4) <- c("date", "steps.sum")
+
+qplot(steps.sum, data = data4)
+mean(data4$steps.sum)
+median(data4$steps.sum)
+```
+Of course the mean and median value of this part is different from the ones in the first part because we filled the missing values with another value.
 
 
+###5. Are there differences in activity patterns between weekdays and weekends?
+Code:
+```{r}
+category <- c(1: length(datawithoutna$date))
+datawithoutna <- cbind(datawithoutna, category)
+for (i in 1:length(datawithoutna$date)) {
+    if (weekdays(as.Date(datawithoutna$date[i])) == "ÐÇÆÚÁù") {
+      datawithoutna$category[i] <- "Weekend"
+    } else 
+    if (weekdays(as.Date(datawithoutna$date[i])) == "ÐÇÆÚÈÕ") {
+      datawithoutna$category[i] <- "Weekend"
+    }
+      else {
+      datawithoutna$category[i] <- "Weekday"
+    }
+  }
+datawithoutna$category <- factor(datawithoutna$category)
 
-## Are there differences in activity patterns between weekdays and weekends?
+data5 <- aggregate(datawithoutna$steps, by=list(datawithoutna$interval, datawithoutna$category), FUN = mean)
+names(data5) <- c("interval", "category", "steps.mean")
+qplot(interval, steps.mean, data = data5, geom = "line", facets = category ~ .)
+```
+
